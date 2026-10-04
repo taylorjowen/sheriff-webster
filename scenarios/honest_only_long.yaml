@@ -1,0 +1,18 @@
+# False-positive check (§11): only honest players over 120 days.
+name: honest_only_long
+seed: 3
+start_day: 1700
+days: 120
+answers: real
+players:
+  - {name: Narrow Nell, strategy: honest_narrowing, skill: 0.4}
+  - {name: Elim Eli, strategy: honest_elimination, skill: 0.9}
+  - {name: Hybrid Hank, strategy: honest_hybrid, skill: 0.6}
+  - {name: Lucky Lou, strategy: honest_narrowing, skill: 0.95}
+  - {name: Sloppy Sam, strategy: honest_hybrid, skill: 0.2, post_rate: 0.5}
+expect:
+  - {player: Narrow Nell, longterm_posterior_lt: 0.5}
+  - {player: Elim Eli, longterm_posterior_lt: 0.5}
+  - {player: Hybrid Hank, longterm_posterior_lt: 0.5}
+  - {player: Lucky Lou, longterm_posterior_lt: 0.5}
+  - {player: Sloppy Sam, longterm_posterior_lt: 0.5}

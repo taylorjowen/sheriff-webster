@@ -1,0 +1,32 @@
+# Copy to config.yaml and fill in. Everything here is optional; defaults live in sheriff/config.py.
+# Channel settings can also be changed at runtime with `/sheriff config here` and `/sheriff config set`
+# (runtime changes are stored in the live DB and override this file).
+
+env: live                       # live | test   (the ENV environment variable overrides this)
+
+discord:
+  guild_id: null                # your server's ID: makes slash commands appear instantly
+  wordle_bot_ids: [1211781489931452447]   # the Wordle app's bot user ID -- verify in your server
+  ingest_channel_ids: []        # channel(s) where the Wordle app posts recaps
+  board_channel_id: null        # where Sheriff posts boards (default: first ingest channel)
+  sandbox_channel_ids: []       # test-mode-only channels (never ingested live)
+  admin_user_ids: []            # extra admins besides members with Manage Server
+  enable_test_commands: true
+
+image:
+  # Calibrate against a real recap with: python -m sheriff.tools.calibrate <image>
+  colors:
+    green: [83, 141, 78]
+    yellow: [181, 159, 59]
+    gray: [58, 58, 60]
+    empty: [44, 44, 46]
+  tolerance: 22
+
+model:
+  prior: 0.05                   # P(a player is a cheater) / P(a game is cheated)
+  cheat_rate: 0.5               # per-game cheat rate assumed for a cheater (long-term)
+  row_epsilon: 0.6              # fitted by: python -m sheriff.tools.fit_model
+  row_beta: 1.2
+
+bounty:
+  threshold: 0.5

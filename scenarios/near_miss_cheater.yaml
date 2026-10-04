@@ -1,0 +1,22 @@
+name: near_miss_cheater
+seed: 11
+start_day: 1880
+days: 50
+answers: real
+players:
+  - name: Steady Eddie
+    strategy: honest_hybrid
+    skill: 0.6
+  - name: Jumpy Jim
+    strategy: cheat_near_miss
+    cheat_rate: 0.6
+  - name: Scenic Sue
+    strategy: honest_elimination
+    skill: 0.8
+expect:
+  - player: Jumpy Jim
+    longterm_posterior_gt: 0.5
+  - player: Steady Eddie
+    longterm_posterior_lt: 0.2
+  - player: Scenic Sue
+    longterm_posterior_lt: 0.2

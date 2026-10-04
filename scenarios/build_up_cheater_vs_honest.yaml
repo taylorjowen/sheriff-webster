@@ -1,0 +1,26 @@
+name: build_up_cheater_vs_honest
+seed: 42
+start_day: 1900
+days: 60
+answers: real            # use the answer cache (falls back to seeded random words)
+players:
+  - name: Honest Abe
+    strategy: honest_narrowing
+    skill: 0.7
+  - name: Sneaky Pete
+    strategy: cheat_build_up
+    cheat_rate: 0.5
+    start_cheating_day: 1930
+  - name: Flaky Fran
+    strategy: honest_hybrid
+    rename_on_day: 1920
+    new_name: Fran the Fair
+    post_rate: 0.6
+expect:
+  - player: Sneaky Pete
+    longterm_posterior_gt: 0.5
+    by_day: 1959
+  - player: Honest Abe
+    longterm_posterior_lt: 0.2
+  - player: Flaky Fran
+    longterm_posterior_lt: 0.2

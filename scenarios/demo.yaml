@@ -1,0 +1,25 @@
+# Interactive demo: a blatant cheater gets a bounty within a couple of weeks.
+name: demo
+seed: 7
+start_day: 1880
+days: 40
+answers: real
+plain_name_rate: 0.3
+playing_messages: false
+players:
+  - name: Test Tex
+    strategy: honest_hybrid
+    skill: 0.7
+  - name: Calamity Jane
+    strategy: honest_elimination
+    skill: 0.8
+  - name: Doc Holiday
+    strategy: cheat_near_miss
+    cheat_rate: 0.8
+  - name: Billy the Kid
+    strategy: cheat_build_up
+    cheat_rate: 0.7
+  - name: Annie Oakley
+    strategy: honest_narrowing
+    skill: 0.5
+    post_rate: 0.7

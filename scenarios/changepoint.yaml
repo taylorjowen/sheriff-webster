@@ -1,0 +1,11 @@
+name: changepoint
+seed: 5
+start_day: 1850
+days: 80
+answers: real
+players:
+  - {name: Turncoat Tom, strategy: cheat_build_up, cheat_rate: 0.7, start_cheating_day: 1890}
+  - {name: Honest Harriet, strategy: honest_hybrid}
+expect:
+  - {player: Turncoat Tom, longterm_posterior_gt: 0.5}
+  - {player: Honest Harriet, longterm_posterior_lt: 0.2}
