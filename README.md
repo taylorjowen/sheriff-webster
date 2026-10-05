@@ -17,6 +17,29 @@ python -m sheriff                                  # run the bot
 
 The first run builds a ~30 MB pattern table in `data/cache/` (a few seconds).
 
+## Deploying with Docker
+
+On any Linux server with Docker (e.g. a small VPS; 512 MB RAM is plenty):
+
+```bash
+curl -fsSL https://get.docker.com | sh                 # if Docker isn't installed
+git clone https://github.com/taylorjowen/sheriff-webster.git && cd sheriff-webster
+# copy .env and config.yaml from your PC (scp), or create them from the .example files
+docker compose run --rm sheriff python -m sheriff.tools.answers fetch --from 1700
+docker compose up -d --build
+docker compose logs -f                                  # look for "riding as ..."
+```
+
+All state lives in `./data` on the host (live DB, archive, answer cache, pattern table,
+harvested digit templates); back that folder up. Tools run inside the container:
+
+```bash
+docker compose exec sheriff python -m sheriff.tools.calibrate data/archive/<id>_0.png
+docker compose exec sheriff python -m sheriff.tools.harvest_glyphs data/archive/<id>_0.png 1924
+```
+
+Update with `git pull && docker compose up -d --build`. Run only one copy of the bot per token.
+
 ## How the scoring works (short version)
 
 An honest player picks each guess without knowing the answer, so given what their own
@@ -71,7 +94,7 @@ fixtures yet. After the first `/sheriff backfill` (raw inputs go to `data/archiv
 1. `python -m sheriff.tools.calibrate data/archive/<id>_0.png --overlay check.png` prints the
    dominant colors and what the parser sees. Put the real tile colors in `config.yaml`
    under `image.colors`.
-2. `python -m sheriff.tools.harvest_glyphs data/archive/<id>_0.png <wordle number>` teaches
+2. `python -m sheriff.tools.harvest_glyphs data/archive/<id>_0.png <wordle number>` (saved to `data/glyphs/`) teaches
    the day-number reader the real font. Do this for one recap image and one "was playing" image.
 3. `/sheriff reprocess`, then `/sheriff status`.
 

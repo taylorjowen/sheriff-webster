@@ -1,0 +1,14 @@
+services:
+  sheriff:
+    build: .
+    image: sheriff-webster
+    restart: unless-stopped
+    env_file: .env                    # DISCORD_TOKEN=...
+    volumes:
+      - ./data:/app/data              # DB, archive, caches -- back this up
+      - ./config.yaml:/app/config.yaml:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

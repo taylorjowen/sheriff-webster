@@ -1,6 +1,6 @@
 """Read the day number from the "Wordle No. N" title by digit template matching (§5.2 step 6).
 
-Templates live in <glyph_dir>/<set>/<digit>_<k>.png and are harvested from real
+Templates live in <glyph_dir or user_glyph_dir>/<set>/<digit>_<k>.png and are harvested from real
 fixtures with `python -m sheriff.tools.harvest_glyphs <image> <day>`. Tesseract is
 used as a fallback only if `pytesseract` is installed.
 """
@@ -162,7 +162,10 @@ def read_day_number(rgb: np.ndarray, title_bottom: int, tile_size: float, cfg: C
     glyphs, err = title_glyphs(rgb, title_bottom, cfg)
     reading = None
     if not err and glyphs:
-        sets = glyph_sets if glyph_sets is not None else load_glyph_sets(cfg.get("paths.glyph_dir"))
+        if glyph_sets is not None:
+            sets = glyph_sets
+        else:   # built-in templates plus ones harvested from real images (kept under data/)
+            sets = {**load_glyph_sets(cfg.path("glyph_dir")), **load_glyph_sets(cfg.path("user_glyph_dir"))}
         if sets:
             reading, score = match_glyphs(glyphs, sets, float(cfg.get("image.digit_match_threshold")))
             if reading is None:

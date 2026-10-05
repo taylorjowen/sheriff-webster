@@ -24,7 +24,8 @@ DEFAULTS: dict[str, Any] = {
         "cache_dir": "data/cache",
         "test_dir": "data/test_runs",
         "scenario_dir": "scenarios",
-        "glyph_dir": str(PACKAGE_DATA / "glyphs"),
+        "glyph_dir": str(PACKAGE_DATA / "glyphs"),   # built-in digit templates
+        "user_glyph_dir": "data/glyphs",              # templates harvested from real images
     },
     "discord": {
         # Astrocade / Wordle app bot user id. Verify against your server.

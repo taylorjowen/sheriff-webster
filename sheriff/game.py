@@ -396,6 +396,13 @@ class SheriffGame:
     async def _update_bounty_board(self) -> None:
         msg = self._bounty_public()
         existing = self.store.bot_message("bounty", -1)
+        # A new or removed bounty reposts the board at the bottom of the channel so it gets seen;
+        # amount changes alone just edit in place (no spam).
+        signature = sorted(b["alias"] for b in self.store.active_bounties())
+        if existing and signature != self.store.meta("bounty_signature"):
+            await self.sink.delete(existing["message_id"])
+            existing = None
+        self.store.set_meta("bounty_signature", signature)
         if existing:
             try:
                 await self.sink.edit(existing["message_id"], msg)

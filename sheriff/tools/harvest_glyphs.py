@@ -27,7 +27,7 @@ def harvest(image_bytes: bytes, day: int, cfg: Config, set_name: str) -> list[Pa
     digits = str(day)
     if err or len(glyphs) != len(digits):
         raise SystemExit(f"found {len(glyphs)} digit glyphs ({err or 'ok'}), expected {len(digits)}")
-    out_dir = Path(cfg.get("paths.glyph_dir")) / set_name
+    out_dir = cfg.path("user_glyph_dir") / set_name
     out_dir.mkdir(parents=True, exist_ok=True)
     written = []
     for d, g in zip(digits, glyphs):
