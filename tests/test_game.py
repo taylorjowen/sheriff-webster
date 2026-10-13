@@ -135,6 +135,40 @@ def test_share_text_dedupe_and_conflict(cfg):
     assert not asyncio.run(g.ingest(malformed)).ok
 
 
+def test_late_finish_replaces_gridless_recap_entry(cfg):
+    run = make_run(cfg, days=0, players=[{"name": "A"}, {"name": "B"}])
+    g, s = run.game, run.store
+    b = run.player("B").pid
+    ts = run.clock.now() + timedelta(days=1)
+    # B hadn't finished when the recap went out: listed as X/6 with no card in the image
+    recap = RecapEnvelope("recap", "r1", "sandbox", "bot", "3/6: @A\nX/6: @B", ts,
+                          synthetic_grids=[["BYBBG", "BGGBG", "GGGGG"]], synthetic_day=1880)
+    asyncio.run(g.ingest(recap))
+    assert s.result(b, 1880).grid is None and s.result(b, 1880).guesses is None
+    rows = ["BBBBY", "BYBBB", "BGBGG", "BGBGG", "BGGGG", "GGGGG"]
+    playing = RecapEnvelope("playing", "p1", "sandbox", "bot", "B was playing", ts + timedelta(hours=7),
+                            synthetic_grids=[rows], synthetic_day=1880)
+    asyncio.run(g.ingest(playing))
+    res = s.result(b, 1880)
+    assert res.grid == "|".join(rows) and res.guesses == 6 and res.source == "playing_image"
+    assert s.count_events("conflict") == 0
+
+
+def test_escaped_playing_name_resolves_and_clears_old_pending(cfg):
+    run = make_run(cfg, days=0, players=[{"name": "Fire Emblem: Scuba Steve"}])
+    g, s = run.game, run.store
+    pid = run.player("Fire Emblem: Scuba Steve").pid
+    ts = run.clock.now() + timedelta(days=1)
+    playing = RecapEnvelope("playing", "p1", "sandbox", "bot", "Fire Emblem\\: Scuba Steve was playing", ts,
+                            synthetic_grids=[["BYBBG", "GGGGG"]], synthetic_day=1880)
+    asyncio.run(g.ingest(playing))
+    assert not s.pending() and s.result(pid, 1880).guesses == 2
+    # rows stranded under the escaped name before the fix resolve on the next retry
+    s.add_pending("Fire Emblem\\: Scuba Steve", 1881, "p0", "playing", "BBBBB|GGGGG", "2", ts)
+    assert asyncio.run(g.retry_pending()) == 1 and not s.pending()
+    assert s.result(pid, 1881).grid == "BBBBB|GGGGG"
+
+
 @pytest.mark.parametrize("name", ["build_up_cheater_vs_honest", "near_miss_cheater", "honest_only_long"])
 def test_scenario_expectations(cfg, name):
     run = ScenarioRun(cfg, Scenario.load(find_scenario(cfg, name)), mode="text")

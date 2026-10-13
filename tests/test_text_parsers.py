@@ -22,6 +22,7 @@ def test_recap_text_order_and_tokens():
 
 def test_playing_text():
     assert parse_playing_text("Fire Emblem: Fortune's Weeb was playing") == "Fire Emblem: Fortune's Weeb"
+    assert parse_playing_text("Fire Emblem\\: Scuba Steve was playing") == "Fire Emblem: Scuba Steve"
     assert classify_wordle_bot_text("Tex was playing") == "playing"
     assert parse_playing_text("hello") is None
 

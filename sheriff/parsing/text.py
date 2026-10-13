@@ -8,6 +8,7 @@ OUTCOME_LINE = re.compile(r"(?:^|\s)([1-6Xx])/6\s*:\s*(.*)$")
 MENTION = re.compile(r"<@!?(\d+)>")
 PLAYING = re.compile(r"^\s*(.+?)\s+was playing\s*$", re.IGNORECASE | re.DOTALL)
 SHARE_HEADER = re.compile(r"Wordle\s+([\d,.\s]+?)\s+([1-6X])/6(\*?)", re.IGNORECASE)
+MD_ESCAPE = re.compile(r"\\([^\w\s])")
 
 EMOJI_MAP = {
     "\U0001F7E9": "G",  # green square
@@ -45,6 +46,11 @@ class RecapText:
         return [(n, line.outcome) for line in self.lines for n in line.names]
 
 
+def unescape_markdown(name: str) -> str:
+    """Discord backslash-escapes Markdown punctuation in plain-text names (":" arrives as a backslash-colon)."""
+    return MD_ESCAPE.sub(lambda m: m.group(1), name)
+
+
 def _split_names(segment: str) -> list[NameToken]:
     out: list[NameToken] = []
     pos = 0
@@ -61,7 +67,7 @@ def _plain_names(text: str) -> list[NameToken]:
     parts = re.split(r"(?:^|\s)@", " " + text)
     names = []
     for p in parts[1:]:
-        name = p.strip().strip(",")
+        name = unescape_markdown(p.strip().strip(","))
         if name:
             names.append(NameToken("name", name))
     return names
@@ -82,7 +88,7 @@ def parse_recap_text(text: str) -> RecapText | None:
 
 def parse_playing_text(text: str) -> str | None:
     m = PLAYING.match(text.strip())
-    return m.group(1).strip() if m else None
+    return unescape_markdown(m.group(1).strip()) if m else None
 
 
 def classify_wordle_bot_text(text: str) -> str | None:

@@ -18,7 +18,7 @@ from . import content
 from .config import Config
 from .days import datetime_to_day
 from .parsing import parse_playing, parse_recap
-from .parsing.text import NameToken, ShareParseError, parse_share_text
+from .parsing.text import NameToken, ShareParseError, parse_share_text, unescape_markdown
 from .patterns import GREENS_OF, WordData, row_to_code
 from .scoring.engine import GameScore, InconsistentGrid, Scorer, explain_flavor
 from .scoring.posterior import bounty_amount, cusum, daily_posterior, longterm_posterior
@@ -185,7 +185,9 @@ class SheriffGame:
             return IngestResult("playing", True, parsed.day, f"pending identity: {pid.reason}")
         existing = self.store.result(pid, parsed.day)
         guesses = None if parsed.outcome == "X" else int(parsed.outcome)
-        if existing is None:
+        if existing is None or existing.grid is None:
+            # A grid-less recap entry (card missing from the recap image) yields to a finished game:
+            # players who finish after the recap is posted show up there as X/6 with no card.
             self.store.put_result(pid, parsed.day, guesses, None, grid, "playing_image", env.message_id, env.timestamp)
         elif existing.grid != grid:
             if existing.source == "playing_image" and existing.source_message_id == str(env.message_id):
@@ -229,7 +231,7 @@ class SheriffGame:
         moved = 0
         for p in self.store.pending():
             token = NameToken("mention", p["raw_name"][2:-1]) if p["raw_name"].startswith("<@") \
-                else NameToken("name", p["raw_name"].lstrip("@"))
+                else NameToken("name", unescape_markdown(p["raw_name"].lstrip("@")))
             pid = await self._resolve(token, self.clock.now())
             if isinstance(pid, Unresolved):
                 continue

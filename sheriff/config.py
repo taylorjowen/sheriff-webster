@@ -75,7 +75,7 @@ DEFAULTS: dict[str, Any] = {
         "cheat_guess_dist": {"1": 0.03, "2": 0.30, "3": 0.42, "4": 0.18, "5": 0.05, "6": 0.015, "X": 0.005},
         "timing_enabled": False,
     },
-    "bounty": {"threshold": 0.5},
+    "bounty": {"threshold": 0.35},
     "cusum": {"threshold": 4.0, "drift": 0.0},
 }
 
