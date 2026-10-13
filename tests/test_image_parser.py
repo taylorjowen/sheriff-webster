@@ -92,12 +92,47 @@ def test_perturbations_never_silently_wrong(cfg, kind):
             assert got.rows is None or got.rows == want.rows, (kind, got, want)
 
 
-def test_extra_and_missing_cards_fail_validation(cfg):
+def test_extra_cards_fail_validation(cfg):
     cards = random_cards(random.Random(9), 4)
-    env = recap_env(recap_text(cards), 1950, [render_recap_image(1950, cards[:3], cfg)])
-    assert "grids" in parse_recap(env, cfg).error
     env = recap_env(recap_text(cards[:3]), 1950, [render_recap_image(1950, cards, cfg)])
-    assert parse_recap(env, cfg).error
+    assert "grids" in parse_recap(env, cfg).error
+
+
+def _cards(*outcomes):
+    out = []
+    for i, o in enumerate(outcomes):
+        k = 6 if o == "X" else int(o)
+        rows = ["BYBBG"] * (k - 1) + ["GGBYB" if o == "X" else "GGGGG"]
+        rows[0] = "BBBBB"[:i % 5] + "Y" + "BBBBB"[i % 5 + 1:]   # make each card distinguishable
+        out.append(CardSpec(f"P{i}", str(i + 1), o, rows, avatar=i))
+    return out
+
+
+def test_missing_card_drops_only_that_player(cfg):
+    """Real recaps sometimes list a player whose card isn't in the image (seen with an X/6)."""
+    cards = _cards("4", "5", "6", "X")
+    env = recap_env(recap_text(cards), 1950, [render_recap_image(1950, cards[:3], cfg)])
+    parsed = parse_recap(env, cfg)
+    assert parsed.error is None
+    assert [c.rows for c in parsed.cards[:3]] == [c.rows for c in cards[:3]]
+    assert parsed.cards[3].outcome == "X" and parsed.cards[3].rows is None and parsed.cards[3].error
+
+
+def test_missing_card_in_tied_group_is_ambiguous(cfg):
+    cards = _cards("3", "4", "4", "5")
+    shown = [cards[0], cards[2], cards[3]]   # one of the two 4/6 cards is missing: can't tell whose
+    parsed = parse_recap(recap_env(recap_text(cards), 1950, [render_recap_image(1950, shown, cfg)]), cfg)
+    assert parsed.error is None
+    assert parsed.cards[0].rows == cards[0].rows and parsed.cards[3].rows == cards[3].rows
+    assert parsed.cards[1].rows is None and parsed.cards[2].rows is None
+    assert parsed.cards[1].error and parsed.cards[2].error
+
+
+def test_missing_cards_that_dont_fit_the_text_fail_validation(cfg):
+    cards = _cards("3", "4", "5")
+    stray = _cards("2", "4")   # a 2/6 card nobody in the text has
+    env = recap_env(recap_text(cards), 1950, [render_recap_image(1950, stray, cfg)])
+    assert "grids" in parse_recap(env, cfg).error
 
 
 def test_outcome_mismatch_fails_only_that_card(cfg):

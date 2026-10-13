@@ -64,6 +64,52 @@ def validate_rows(rows: list[str], outcome: str) -> str | None:
     return None
 
 
+def _implied_outcome(rows: list[str]) -> str | None:
+    if rows and rows[-1] == "GGGGG":
+        return str(len(rows))
+    return "X" if len(rows) == 6 else None
+
+
+def _align_missing_cards(entries: list[tuple[NameToken, str]],
+                         grids: list[tuple[list[str] | None, str | None]]):
+    """Pair grids with names when the image has fewer cards than the text has names.
+
+    The Wordle app sometimes leaves a listed player's card out of the image. Each grid's outcome
+    is known from the grid itself, so grids are matched to the text's outcome groups: a group with
+    as many grids as names pairs up as usual, a group with no grids loses only its cards, and a
+    group with some but not all of its grids is ambiguous (we can't tell whose card is missing),
+    so none of its players get a grid. Returns None when the image can't be reconciled at all.
+    """
+    if len(grids) > len(entries):
+        return None
+    implied = []
+    for rows, _ in grids:
+        outcome = _implied_outcome(rows) if rows else None
+        if outcome is None:
+            return None
+        implied.append(outcome)
+    order = list(dict.fromkeys(o for _, o in entries))
+    if any(o not in order for o in implied):
+        return None
+    ranks = [order.index(o) for o in implied]
+    if ranks != sorted(ranks):   # cards must appear in the same order as the text
+        return None
+    aligned: list[tuple[list[str] | None, str | None]] = []
+    for _, outcome in entries:
+        names = sum(1 for _, o in entries if o == outcome)
+        have = [rows for (rows, _), o in zip(grids, implied) if o == outcome]
+        if len(have) > names:
+            return None
+        if len(have) == names:
+            seen = sum(1 for _, o in entries[:len(aligned)] if o == outcome)
+            aligned.append((have[seen], None))
+        elif not have:
+            aligned.append((None, "no card in recap image"))
+        else:
+            aligned.append((None, f"only {len(have)} of {names} {outcome}/6 cards in recap image"))
+    return aligned
+
+
 def _image_for(env: RecapEnvelope, cfg: Config, expected_day: int) -> ParsedImage | None:
     for data in env.images:
         try:
@@ -101,7 +147,10 @@ def parse_recap(env: RecapEnvelope, cfg: Config, allow_synthetic: bool = False) 
     if day is None:
         return ParsedRecap(None, error="no day number")
     if len(grids) != len(entries):
-        return ParsedRecap(day, error=f"{len(grids)} grids but {len(entries)} names in text")
+        aligned = _align_missing_cards(entries, grids)
+        if aligned is None:
+            return ParsedRecap(day, error=f"{len(grids)} grids but {len(entries)} names in text")
+        grids = aligned
 
     cards = []
     for (token, outcome), (rows, gerr) in zip(entries, grids):

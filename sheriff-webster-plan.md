@@ -123,7 +123,7 @@ The images are synthetic renders with flat colors and fixed layouts. The tile de
    - Sanity check: N must be within ±1 of the date-derived day number for the message timestamp. Otherwise reject.
 7. **Map grids to players (recap):** grid order = text order (lines top to bottom, names left to right). Parse names in order from the raw message content: `<@id>` tokens and plain-text "@Name" tokens. Resolve through `IdentityResolver` (§5.5).
 8. **Validate (strict):**
-   - Grid count must equal the number of names in the text.
+   - Grid count must equal the number of names in the text. Exception: the app sometimes omits a listed player's card. Fewer grids than names is accepted only when each grid's own outcome places it in a text outcome group; a group missing some (not all) of its cards is ambiguous, so none of its players get a grid. Players without a grid are single-player failures.
    - Each player's filled-row count must equal their text outcome (6 for `X/6`).
    - The last filled row must be all green on a win. `X/6` must have no all-green row.
    - Every tile must classify with confidence.
